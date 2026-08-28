@@ -7,7 +7,7 @@ Name: Niha Bai N
 - [x] Part B: PyTorch Model
 - [x] Part C: Docker Containerization
 - [x] Part D: Kubernetes Training Job
-- [ ] Part E: Kubernetes Model Serving
+- [x] Part E: Kubernetes Model Serving
 - [ ] Part F: End-to-End Validation
 > Work in progress
 
@@ -47,14 +47,15 @@ kubectl logs -f job/training-job -n ml-training
 # Once training completes, deploy serving
 kubectl apply -f k8s/serving-deployment.yaml
 kubectl apply -f k8s/serving-service.yaml
-kubectl apply -f k8s/hpa.yaml
 
 # Verify and test
 kubectl get pods -n ml-training
 kubectl port-forward svc/model-serving 8080:80 -n ml-training
 curl -X POST http://localhost:8080/predict -F "image=@test_image.png"
 ```
-Verified: 10-epoch training run reaches ~93.95% validation accuracy, serving container correctly classifies test images via `/predict`.
+Verified: 10-epoch training run reaches ~93.95% validation accuracy on Kubernetes; serving Deployment (2 replicas) and Service verified working, correctly classifying test images via `/predict`.
+
+**Note:** `k8s/hpa.yaml` and `.github/workflows/ci.yml` are intentionally left unimplemented to maintain the structure defined in Part A of assignment.
 
 ## Set up instructions (local deployment)
 **Prerequisites:** Docker Desktop
@@ -86,10 +87,11 @@ Verified locally: 10-epoch training run reaches ~93.6% validation accuracy, serv
 |--|--Dockerfile.serve          # multi-stage image for FastAPI serving
 |--|__Dockerfile.train          # multi-stage image for training
 |--k8s
-|--|--configmap.yaml            # training_config.yaml mounted into the training 
+|--|--configmap.yaml            # training_config.yaml mounted into the training job
 |--|--hpa.yaml
 |--|--namespace.yaml            # creates the ml-training namespace
 |--|--serving-deployment.yaml   # 2-replica FastAPI serving Deployment
+|--|--serving-service.yaml      # ClusterIP Service, port 80 -> 8080
 |--|__training-job.yaml         # training Job + PVCs for /app/data and /app/checkpoints
 |--requirements
 |--|--serve.txt

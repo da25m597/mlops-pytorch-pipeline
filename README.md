@@ -8,8 +8,7 @@ Name: Niha Bai N
 - [x] Part C: Docker Containerization
 - [x] Part D: Kubernetes Training Job
 - [x] Part E: Kubernetes Model Serving
-- [ ] Part F: End-to-End Validation
-> Work in progress
+- [x] Part F: End-to-End Validation
 
 ## Overview
 - **Dataset:** Fashion MNIST (10 classes)
@@ -47,15 +46,15 @@ kubectl logs -f job/training-job -n ml-training
 # Once training completes, deploy serving
 kubectl apply -f k8s/serving-deployment.yaml
 kubectl apply -f k8s/serving-service.yaml
+kubectl apply -f k8s/hpa.yaml
 
 # Verify and test
 kubectl get pods -n ml-training
 kubectl port-forward svc/model-serving 8080:80 -n ml-training
 curl -X POST http://localhost:8080/predict -F "image=@test_image.png"
 ```
-Verified: 10-epoch training run reaches ~93.95% validation accuracy on Kubernetes; serving Deployment (2 replicas) and Service verified working, correctly classifying test images via `/predict`.
-
-**Note:** `k8s/hpa.yaml` and `.github/workflows/ci.yml` are intentionally left unimplemented to maintain the structure defined in Part A of assignment.
+Verified: 10-epoch training run reaches ~94% (rounded off) validation accuracy on Kubernetes; serving Deployment (2 replicas) and Service verified working, correctly classifying test images via `/predict`. 
+**See the final PR for terminal output and screenshots demonstrating the full workflow.**
 
 ## Set up instructions (local deployment)
 **Prerequisites:** Docker Desktop
@@ -80,7 +79,7 @@ Verified locally: 10-epoch training run reaches ~93.6% validation accuracy, serv
 
 ## Repository structure
 ```
-|--.github\workflows\ci.yml
+|--.github\workflows\ci.yml     # GitHub Actions: runs pytest on push and on PRs to develop/main
 |--configs
 |--|_training_config.yaml       # hyperparameters, dataset, checkpoint paths
 |--docker
@@ -108,3 +107,9 @@ Verified locally: 10-epoch training run reaches ~93.6% validation accuracy, serv
 |_ README.md
 ```
 **Note:** `data/` and `checkpoints/` are not committed to git (see `.gitignore`) — they're created automatically when you run the Docker/Kubernetes commands above. `data/` holds the downloaded Fashion-MNIST dataset, `checkpoints/` holds the trained model weights (`FashionMnistClassifier.pt`).
+
+## Running tests
+Unit tests cover `src/model.py` (architecture correctness, output shape, error handling).
+```bash
+docker run --rm --entrypoint sh -v %cd%\src:/app/src -v %cd%\tests:/app/tests mlops-train:v1 -c "pip install pytest --quiet && python -m pytest tests/ -v"
+​```
